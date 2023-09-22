@@ -41,33 +41,24 @@ def collect_urls(subdomain_file):
         for url in all_urls:
             all_output_file.write(url + "\n")
 
-def install_amassx():
-    # Get the current script's location
-    script_location = os.path.abspath(__file__)
-    script_name = os.path.basename(script_location)
-
-    # Destination directory for installation
-    destination_directory = '/usr/local/bin'
-
-    try:
-        # Copy the script to the destination directory
-        shutil.copy(script_location, os.path.join(destination_directory, script_name))
-
-        # Make the script executable
-        os.chmod(os.path.join(destination_directory, script_name), 0o755)
-
-        print(f"{script_name} has been installed to {destination_directory}/{script_name}")
-    except Exception as e:
-        print(f"Installation failed: {e}")
-
 if __name__ == "__main__":
     animation_stopped = False  # Flag to control the animation
-    domain = input("Enter Your Target: ")
 
-    # Check if the script is being run for installation
-    if domain.lower() == "install":
-        install_amassx()
+    # Installation logic
+    if not os.path.exists("/usr/local/bin/amassx.py"):
+        script_location = os.path.abspath(__file__)
+        script_name = os.path.basename(script_location)
+        destination_directory = '/usr/local/bin'
+
+        try:
+            shutil.copy(script_location, os.path.join(destination_directory, script_name))
+            os.chmod(os.path.join(destination_directory, script_name), 0o755)
+            print(f"{script_name} has been installed to {destination_directory}/{script_name}")
+        except Exception as e:
+            print(f"Installation failed: {e}")
     else:
+        domain = input("Enter Your Target: ")
+
         # Start the animation in a separate thread
         animation_thread = threading.Thread(target=animate_running)
         animation_thread.start()
