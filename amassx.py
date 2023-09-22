@@ -56,7 +56,9 @@ def install_amassx():
         os.chmod(os.path.join(destination_directory, script_name), 0o755)
 
         print(f"{script_name} has been installed to {destination_directory}/{script_name}")
-        sys.exit(0)  # Exit after successful installation
+        
+        # Automatically exit after successful installation
+        sys.exit(0)  
     except Exception as e:
         print(f"Installation failed: {e}")
         sys.exit(1)  # Exit with an error code
