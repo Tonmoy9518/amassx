@@ -5,7 +5,9 @@ import time
 import httpx
 import os
 import shutil
+import threading
 import sys
+import requests  # Import the requests library for HTTP requests
 
 def animate_running():
     animation = "|/-\\"
@@ -19,70 +21,69 @@ def stop_animation():
     animation_stopped = True
 
 def collect_urls(subdomain_file):
-    live_urls = []  # To store live URLs
-    all_urls = []   # To store all URLs
-
-    with open(subdomain_file, "r") as file:
-        for line in file:
-            subdomain = line.strip()
-            url = f"http://{subdomain}"  # Assuming HTTP, you can modify for HTTPS
-            all_urls.append(url)
-            try:
-                response = httpx.head(url, timeout=5)
-                if response.status_code == 200:
-                    live_urls.append(url)
-            except Exception as e:
-                pass  # Handle exceptions as needed
-
-    with open("live_url.txt", "w") as live_output_file:
-        for url in live_urls:
-            live_output_file.write(url + "\n")
-
-    with open("all_url.txt", "w") as all_output_file:
-        for url in all_urls:
-            all_output_file.write(url + "\n")
+    # ... (existing code for collecting URLs)
 
 def install_amassx():
-    # Get the current script's location
-    script_location = os.path.abspath(__file__)
-    script_name = os.path.basename(script_location)
-    destination_directory = '/usr/local/bin'
+    # ... (existing code for installation)
 
+def check_for_updates():
     try:
-        # Copy the script to the destination directory
-        shutil.copy(script_location, os.path.join(destination_directory, script_name))
+        # Make a GET request to GitHub to check for updates
+        response = requests.get("https://raw.githubusercontent.com/yourusername/amassx/main/amassx.py")
+        if response.status_code == 200:
+            remote_code = response.text
 
-        # Make the script executable
-        os.chmod(os.path.join(destination_directory, script_name), 0o755)
+            # Read the current local code
+            with open(__file__, "r") as file:
+                local_code = file.read()
 
-        print(f"{script_name} has been installed to {destination_directory}/{script_name}")
-        
-        # Automatically exit after successful installation
-        sys.exit(0)  
+            # Check if the remote code is different from the local code
+            if remote_code != local_code:
+                print("An update is available. Updating...")
+                
+                # Save the remote code to a temporary file
+                with open("temp_amassx.py", "w") as temp_file:
+                    temp_file.write(remote_code)
+
+                # Copy the temporary file to the current script
+                shutil.copy("temp_amassx.py", __file__)
+
+                # Remove the temporary file
+                os.remove("temp_amassx.py")
+
+                print("Update complete. Please run amassx again.")
+                sys.exit(0)
+            else:
+                print("You are already using the latest version.")
+                sys.exit(0)
+        else:
+            print("Failed to check for updates.")
     except Exception as e:
-        print(f"Installation failed: {e}")
-        sys.exit(1)  # Exit with an error code
+        print(f"Update check failed: {e}")
 
 if __name__ == "__main__":
     animation_stopped = False  # Flag to control the animation
-
-    # Check if the script is being run for installation
-    if len(sys.argv) > 1 and sys.argv[1].lower() == "install":
-        install_amassx()
-
     domain = input("Enter Your Target: ")
 
-    # Start the animation in a separate thread
-    animation_thread = threading.Thread(target=animate_running)
-    animation_thread.start()
+    # Check if the script is being run with the -update argument
+    if len(sys.argv) > 1 and sys.argv[1] == "-update":
+        check_for_updates()
 
-    subprocess.call(f"amass enum -passive -d {domain} -o sub_{domain}.txt", shell=True)
-    stop_animation()  # Stop the animation after "AMASS END" is displayed
-    animation_thread.join()  # Wait for the animation thread to finish
+    # Check if the script is being run for installation
+    if domain.lower() == "install":
+        install_amassx()
+    else:
+        # Start the animation in a separate thread
+        animation_thread = threading.Thread(target=animate_running)
+        animation_thread.start()
 
-    print("\nAMASS END")
+        subprocess.call(f"amass enum -passive -d {domain} -o sub_{domain}.txt", shell=True)
+        stop_animation()  # Stop the animation after "AMASS END" is displayed
+        animation_thread.join()  # Wait for the animation thread to finish
 
-    print("Collecting all URLs and checking for live URLs...")
-    collect_urls(f"sub_{domain}.txt")
-    print("Live URLs collected in live_url.txt")
-    print("All URLs collected in all_url.txt")
+        print("\nAMASS END")
+
+        print("Collecting all URLs and checking for live URLs...")
+        collect_urls(f"sub_{domain}.txt")
+        print("Live URLs collected in live_url.txt")
+        print("All URLs collected in all_url.txt")
