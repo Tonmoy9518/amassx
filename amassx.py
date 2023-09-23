@@ -2,10 +2,9 @@
 
 import subprocess
 import time
-import httpx
 import os
 import shutil
-import threading  # Import the threading module
+import threading
 
 def animate_running():
     animation = "|/-\\"
@@ -18,29 +17,17 @@ def stop_animation():
     global animation_stopped
     animation_stopped = True
 
-def collect_urls(subdomain_file):
-    live_urls = []  # To store live URLs
-    all_urls = []   # To store all URLs
+def collect_subdomains(subdomain_file):
+    subdomains = []
 
     with open(subdomain_file, "r") as file:
         for line in file:
             subdomain = line.strip()
-            url = f"http://{subdomain}"  # Assuming HTTP, you can modify for HTTPS
-            all_urls.append(url)
-            try:
-                response = httpx.head(url, timeout=5)
-                if response.status_code == 200:
-                    live_urls.append(url)
-            except Exception as e:
-                pass  # Handle exceptions as needed
+            subdomains.append(subdomain)
 
-    with open("live_url.txt", "w") as live_output_file:
-        for url in live_urls:
-            live_output_file.write(url + "\n")
-
-    with open("all_url.txt", "w") as all_output_file:
-        for url in all_urls:
-            all_output_file.write(url + "\n")
+    with open("subdomains.txt", "w") as output_file:
+        for subdomain in subdomains:
+            output_file.write(subdomain + "\n")
 
 def install_amassx():
     # Get the current script's location
@@ -79,7 +66,6 @@ if __name__ == "__main__":
 
         print("\nAMASS END")
 
-        print("Collecting all URLs and checking for live URLs...")
-        collect_urls(f"sub_{domain}.txt")
-        print("Live URLs collected in live_url.txt")
-        print("All URLs collected in all_url.txt")
+        print("Collecting subdomains...")
+        collect_subdomains(f"sub_{domain}.txt")
+        print("Subdomains collected in subdomains.txt")
